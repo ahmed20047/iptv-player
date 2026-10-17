@@ -1,12 +1,18 @@
 import type { Metadata } from "next";
 import { Cairo } from "next/font/google";
 import { LangProvider } from "@/lib/i18n";
+import LockOverlay from "@/components/LockOverlay";
+import PwaRegister from "@/components/PwaRegister";
 import "./globals.css";
 
 const cairo = Cairo({
   subsets: ["arabic", "latin"],
   variable: "--font-cairo",
 });
+
+export const viewport = {
+  themeColor: "#070a12",
+};
 
 export const metadata: Metadata = {
   title: "IPTV Player",
@@ -19,7 +25,11 @@ export default function RootLayout({
   return (
     <html lang="ar" dir="rtl" className={cairo.variable}>
       <body className="min-h-screen text-gray-100 antialiased">
-        <LangProvider>{children}</LangProvider>
+        <LangProvider>
+          {children}
+          <LockOverlay />
+          <PwaRegister />
+        </LangProvider>
       </body>
     </html>
   );

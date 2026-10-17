@@ -46,6 +46,47 @@ export function logout() {
   localStorage.removeItem(CREDS_KEY);
 }
 
+// ===== حسابات متعددة =====
+export interface Account {
+  id: string;
+  label: string;
+  creds: Creds;
+}
+
+const ACCOUNTS_KEY = "iptv_accounts";
+
+export function getAccounts(): Account[] {
+  if (typeof window === "undefined") return [];
+  try {
+    return JSON.parse(localStorage.getItem(ACCOUNTS_KEY) ?? "[]") as Account[];
+  } catch {
+    return [];
+  }
+}
+
+export function accountLabel(creds: Creds): string {
+  return creds.type === "xtream" ? creds.username : "M3U";
+}
+
+// بيضيف الحساب أو يحدّثه لو موجود بنفس البيانات
+export function upsertAccount(creds: Creds): string {
+  const accounts = getAccounts();
+  const label = accountLabel(creds);
+  const existing = accounts.find(
+    (a) => JSON.stringify(a.creds) === JSON.stringify(creds)
+  );
+  if (existing) return existing.id;
+  const id = `${Date.now()}`;
+  accounts.push({ id, label, creds });
+  localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accounts));
+  return id;
+}
+
+export function removeAccount(id: string) {
+  const accounts = getAccounts().filter((a) => a.id !== id);
+  localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accounts));
+}
+
 export function xtreamBaseUrl(creds: XtreamCreds): string {
   return `http://${creds.server}:${creds.port}`;
 }

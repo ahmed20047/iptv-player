@@ -24,7 +24,12 @@ export default function SeriesPage() {
   const [openSeries, setOpenSeries] = useState<SeriesEntry | null>(null);
   const [episodes, setEpisodes] = useState<Record<string, Episode[]>>({});
   const [season, setSeason] = useState<string>("");
-  const [playing, setPlaying] = useState<{ url: string; title: string; poster?: string } | null>(null);
+  const [playing, setPlaying] = useState<{
+    url: string;
+    title: string;
+    poster?: string;
+    raw?: string;
+  } | null>(null);
   const [error, setError] = useState("");
   const [favTick, setFavTick] = useState(0); // عشان القلوب تتحدث أول بأول
 
@@ -38,6 +43,13 @@ export default function SeriesPage() {
       .then((feed) => {
         setCategories(feed.categories);
         setSeriesList(feed.series);
+        // لو جايين من صفحة البحث: افتح المسلسل المطلوب على طول
+        const wanted = sessionStorage.getItem("open_series");
+        if (wanted) {
+          sessionStorage.removeItem("open_series");
+          const found = feed.series.find((s) => s.key === wanted);
+          if (found) open(found);
+        }
       })
       .catch((e) => setError(errText(t, e)));
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -75,6 +87,7 @@ export default function SeriesPage() {
     if (!openSeries) return;
     setPlaying({
       url: ep.url,
+      raw: ep.raw,
       poster: openSeries.poster,
       title: `${openSeries.name} — ${t("series.episode", { n: ep.num })}${
         ep.title && ep.title !== ep.num ? `: ${ep.title}` : ""
@@ -96,7 +109,13 @@ export default function SeriesPage() {
           </p>
         )}
 
-        <Player src={playing?.url ?? null} title={playing?.title} poster={playing?.poster} page="series" />
+        <Player
+          src={playing?.url ?? null}
+          title={playing?.title}
+          poster={playing?.poster}
+          page="series"
+          sourceUrl={playing?.raw}
+        />
 
         <ContinueWatching
           page="series"

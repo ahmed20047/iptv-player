@@ -2,14 +2,16 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Play, Search } from "lucide-react";
+import { Heart, Play, Search } from "lucide-react";
+import { CategoryChips } from "@/components/CategoryChips";
+import EpgList from "@/components/EpgList";
 import Navbar from "@/components/Navbar";
 import Player from "@/components/Player";
-import { CategoryChips } from "@/components/CategoryChips";
 import { Category } from "@/components/types";
 import { fetchLive, PlayItem } from "@/lib/content";
+import { isFavorite, toggleFavorite } from "@/lib/favorites";
 import { errText, useLang } from "@/lib/i18n";
-import { requireCreds } from "@/lib/xtream";
+import { getCreds, requireCreds } from "@/lib/xtream";
 
 export default function LivePage() {
   const router = useRouter();
@@ -20,6 +22,8 @@ export default function LivePage() {
   const [search, setSearch] = useState("");
   const [playing, setPlaying] = useState<PlayItem | null>(null);
   const [error, setError] = useState("");
+  const [favTick, setFavTick] = useState(0); // عشان القلوب تتحدث أول بأول
+  const creds = getCreds();
 
   useEffect(() => {
     const creds = requireCreds();
@@ -39,10 +43,12 @@ export default function LivePage() {
   const filtered = useMemo(() => {
     return channels.filter(
       (c) =>
-        (category === "all" || c.category === category) &&
+        (category === "all" ||
+          (category === "favs" ? isFavorite(c.url) : c.category === category)) &&
         (!search || c.name.toLowerCase().includes(search.toLowerCase()))
     );
-  }, [channels, category, search]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [channels, category, search, favTick]);
 
   return (
     <div className="min-h-screen">
@@ -54,7 +60,15 @@ export default function LivePage() {
           </p>
         )}
 
-        <Player src={playing?.url ?? null} title={playing?.name} />
+        <Player
+          src={playing?.url ?? null}
+          title={playing?.name}
+          sourceUrl={playing?.raw}
+        />
+
+        {playing && creds?.type === "xtream" && (
+          <EpgList creds={creds} streamId={playing.id} />
+        )}
 
         <div className="relative">
           <Search className="pointer-events-none absolute start-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
@@ -83,6 +97,23 @@ export default function LivePage() {
                 <Play className="h-3.5 w-3.5 fill-current" />
               </span>
               <span className="truncate font-semibold text-gray-200">{ch.name}</span>
+              <span
+                role="button"
+                tabIndex={0}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleFavorite(ch.url);
+                  setFavTick((x) => x + 1);
+                }}
+                className="ms-auto flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition hover:bg-black/40"
+                title={t("common.favorites")}
+              >
+                <Heart
+                  className={`h-3.5 w-3.5 transition ${
+                    isFavorite(ch.url) ? "fill-red-500 text-red-500" : "text-gray-500"
+                  }`}
+                />
+              </span>
             </button>
           ))}
         </div>

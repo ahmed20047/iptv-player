@@ -11,6 +11,14 @@ A clean, simple IPTV player for the browser. Point it at your own subscription a
 - Resume watching — pick up right where you stopped, for every movie and episode
 - "Continue watching" row with progress bars
 - Favorites (heart any movie or series, filter from the category panel)
+- EPG (program schedule) for live channels
+- One search box across channels, movies and series
+- Multiple saved accounts — switch subscriptions from the login screen
+- Favorites for live channels too
+- Download button for movies and episodes
+- Detects mkv/avi files and offers opening them in VLC
+- Lock the app with a passcode
+- Installable as a PWA on your phone
 - Streams go through a tiny local proxy, so no CORS headaches
 - Login details are saved on your device — you sign in once
 
@@ -34,5 +42,4 @@ Then open http://localhost:3000, pick your login type, enter your provider detai
 
 ## To do
 
-- EPG (program guide) for live channels
 - Desktop packaging

@@ -6,6 +6,7 @@ import {
   XtreamCreds,
   proxied,
   xtream,
+  xtreamBaseUrl,
   xtreamStreamUrl,
 } from "./xtream";
 
@@ -23,12 +24,14 @@ export interface PlayItem {
   category: string;
   poster?: string;
   url: string; // جاهز للتشغيل (ممري من الـ proxy)
+  raw?: string; // اللينك الأصلي (للتحميل أو فتح في VLC)
 }
 
 export interface Episode {
   num: string;
   title: string;
   url: string;
+  raw?: string;
 }
 
 export interface SeriesEntry {
@@ -80,6 +83,7 @@ export async function fetchLive(creds: Creds): Promise<Feed> {
       category: String(c.category_id),
       poster: c.stream_icon || undefined,
       url: xtreamStreamUrl(creds, "live", c.stream_id),
+      raw: `${xtreamBaseUrl(creds)}/live/${creds.username}/${creds.password}/${c.stream_id}`,
     }));
     return { categories, items };
   }
@@ -91,6 +95,7 @@ export async function fetchLive(creds: Creds): Promise<Feed> {
     category: e.group || "Other",
     poster: e.logo || undefined,
     url: proxied(e.url),
+    raw: e.url,
   }));
   return { categories: uniqueCategories(items.map((i) => i.category)), items };
 }
@@ -110,6 +115,7 @@ export async function fetchMovies(creds: Creds): Promise<Feed> {
       category: String(m.category_id),
       poster: m.stream_icon || m.cover || undefined,
       url: xtreamStreamUrl(creds, "movie", m.stream_id, m.container_extension || "mp4"),
+      raw: `${xtreamBaseUrl(creds)}/movie/${creds.username}/${creds.password}/${m.stream_id}.${m.container_extension || "mp4"}`,
     }));
     return { categories, items };
   }
@@ -121,6 +127,7 @@ export async function fetchMovies(creds: Creds): Promise<Feed> {
     category: e.group || "Other",
     poster: e.logo || undefined,
     url: proxied(e.url),
+    raw: e.url,
   }));
   return { categories: uniqueCategories(items.map((i) => i.category)), items };
 }
@@ -159,6 +166,7 @@ export async function fetchSeries(creds: Creds): Promise<{
               ep.id,
               ep.container_extension || "mp4"
             ),
+            raw: `${xtreamBaseUrl(creds)}/series/${creds.username}/${creds.password}/${ep.id}.${ep.container_extension || "mp4"}`,
           }));
         }
         return out;
@@ -177,7 +185,7 @@ export async function fetchSeries(creds: Creds): Promise<{
       Object.fromEntries(
         Object.entries(s.seasons ?? {}).map(([season, eps]: [string, any]) => [
           season,
-          eps.map((ep: any) => ({ num: ep.num, title: ep.title, url: proxied(ep.url) })),
+          eps.map((ep: any) => ({ num: ep.num, title: ep.title, url: proxied(ep.url), raw: ep.url })),
         ])
       ),
   }));

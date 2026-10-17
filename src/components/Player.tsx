@@ -1,24 +1,28 @@
 "use client";
 
 import Hls from "hls.js";
-import { Clapperboard, RotateCcw } from "lucide-react";
+import { Clapperboard, Download, ExternalLink, RotateCcw } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useLang } from "@/lib/i18n";
 import { formatTime, getProgress, removeProgress, saveProgress } from "@/lib/progress";
 
 const RESUME_THRESHOLD = 15; // أقل من كده بنعتبره من الأول
 const SAVE_EVERY_MS = 5000;
+// صيغ مش بتشتغل في المتصفح — بنعرض زرار فتح في VLC
+const UNSUPPORTED = /\.(mkv|avi|mov|m4v)(\?|$)/i;
 
 export default function Player({
   src,
   title,
   poster,
   page,
+  sourceUrl,
 }: {
   src: string | null;
   title?: string;
   poster?: string;
   page?: string;
+  sourceUrl?: string;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const { t } = useLang();
@@ -168,7 +172,35 @@ export default function Player({
         <div className="mt-3 flex items-center gap-2.5">
           <span className="h-5 w-1 rounded-full bg-gradient-to-b from-emerald-400 to-teal-500" />
           <p className="text-lg font-bold text-gray-100">{title}</p>
+          <div className="ms-auto flex items-center gap-2">
+            {src && page && page !== "live" && (
+              <a
+                href={src}
+                download={title || "video"}
+                className="flex items-center gap-1.5 rounded-xl border border-gray-800 bg-gray-900/60 px-3 py-1.5 text-sm text-gray-300 transition hover:border-gray-600"
+              >
+                <Download className="h-4 w-4" />
+                {t("action.download")}
+              </a>
+            )}
+          </div>
         </div>
+      )}
+
+      {/* صيغ مش مدعومة في المتصفح: زرار فتح في VLC */}
+      {src && sourceUrl && UNSUPPORTED.test(sourceUrl) && (
+        <p className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-amber-900/50 bg-amber-950/30 p-3 text-sm text-amber-200">
+          {t("vlc.hint")}
+          <a
+            href={sourceUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center gap-1.5 rounded-lg bg-amber-500/20 px-3 py-1 font-semibold text-amber-200 transition hover:bg-amber-500/30"
+          >
+            <ExternalLink className="h-3.5 w-3.5" />
+            {t("vlc.open")}
+          </a>
+        </p>
       )}
     </div>
   );

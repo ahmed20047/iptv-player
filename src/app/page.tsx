@@ -2,9 +2,18 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Clapperboard, Film, Link2, MonitorPlay, Radio, Server } from "lucide-react";
+import { Clapperboard, Film, Link2, MonitorPlay, Radio, Server, X } from "lucide-react";
 import { errText, useLang } from "@/lib/i18n";
-import { Creds, getLastCreds, saveCreds, xtream } from "@/lib/xtream";
+import {
+  Account,
+  Creds,
+  getAccounts,
+  getLastCreds,
+  removeAccount,
+  saveCreds,
+  upsertAccount,
+  xtream,
+} from "@/lib/xtream";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -17,6 +26,7 @@ export default function LoginPage() {
   const [m3uUrl, setM3uUrl] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [accounts, setAccounts] = useState<Account[]>([]);
 
   useEffect(() => {
     // لو مش مسجل: نعبّي الحقول بآخر بيانات محفوظة (بتفضل محفوظة حتى بعد الخروج)
@@ -32,7 +42,45 @@ export default function LoginPage() {
         setTab("m3u");
       }
     }
+    setAccounts(getAccounts());
   }, []);
+
+  // بيتأكد إن الحساب شغال، يحفظه، ويدخل
+  async function enterWith(creds: Creds): Promise<void> {
+    if (creds.type === "xtream") {
+      const data = await xtream(creds);
+      if (!data?.user_info || Number(data.user_info.auth) !== 1) {
+        throw new Error("error.badCreds");
+      }
+      const exp = Number(data.user_info.exp_date) * 1000;
+      if (exp) console.log("subscription expires:", new Date(exp).toISOString());
+    } else {
+      const res = await fetch(
+        `/api/m3u?check=1&url=${encodeURIComponent(creds.url)}`
+      );
+      if (!res.ok) throw new Error("error.badM3u");
+      const counts = await res.json();
+      if (!counts.live && !counts.movies && !counts.series) {
+        throw new Error("error.badM3u");
+      }
+      console.log("playlist:", counts);
+    }
+    upsertAccount(creds);
+    saveCreds(creds);
+    router.replace("/live");
+  }
+
+  async function quickEnter(account: Account) {
+    setError("");
+    setLoading(true);
+    try {
+      await enterWith(account.creds);
+    } catch (err) {
+      setError(errText(t, err));
+    } finally {
+      setLoading(false);
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -48,27 +96,11 @@ export default function LoginPage() {
           username: username.trim(),
           password: password.trim(),
         };
-        if (c.type !== "xtream") throw new Error("error.generic");
-        const data = await xtream(c);
-        if (!data?.user_info || Number(data.user_info.auth) !== 1) {
-          throw new Error("error.badCreds");
-        }
-        const exp = Number(data.user_info.exp_date) * 1000;
-        if (exp) console.log("subscription expires:", new Date(exp).toISOString());
         creds = c;
       } else {
-        const url = m3uUrl.trim();
-        const res = await fetch(`/api/m3u?check=1&url=${encodeURIComponent(url)}`);
-        if (!res.ok) throw new Error("error.badM3u");
-        const counts = await res.json();
-        if (!counts.live && !counts.movies && !counts.series) {
-          throw new Error("error.badM3u");
-        }
-        console.log("playlist:", counts);
-        creds = { type: "m3u", url };
+        creds = { type: "m3u", url: m3uUrl.trim() };
       }
-      saveCreds(creds);
-      router.replace("/live");
+      await enterWith(creds);
     } catch (err) {
       setError(errText(t, err));
     } finally {
@@ -120,6 +152,45 @@ export default function LoginPage() {
               {t("login.tabM3u")}
             </TabButton>
           </div>
+
+          {accounts.length > 0 && (
+            <div className="mt-6">
+              <p className="mb-2 text-xs font-bold tracking-wide text-gray-500">
+                {t("accounts.title")}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {accounts.map((a) => (
+                  <span
+                    key={a.id}
+                    className="flex items-center gap-1 rounded-full border border-gray-800 bg-gray-950/60 ps-1 pe-1.5 py-1"
+                  >
+                    <button
+                      type="button"
+                      onClick={() => quickEnter(a)}
+                      disabled={loading}
+                      className="flex items-center gap-2 rounded-full px-2.5 py-1 text-sm font-semibold text-emerald-300 transition hover:bg-gray-800 disabled:opacity-50"
+                    >
+                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/15 text-[10px] font-bold ring-1 ring-emerald-500/30">
+                        {a.label.slice(0, 1).toUpperCase()}
+                      </span>
+                      {a.label}
+                    </button>
+                    <button
+                      type="button"
+                      title={t("accounts.remove")}
+                      onClick={() => {
+                        removeAccount(a.id);
+                        setAccounts(getAccounts());
+                      }}
+                      className="flex h-5 w-5 items-center justify-center rounded-full text-gray-500 transition hover:bg-gray-800 hover:text-red-400"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="mt-6 space-y-4">
             {tab === "xtream" ? (

@@ -2,7 +2,18 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Clapperboard, Film, Languages, LogOut, Play, Radio } from "lucide-react";
+import {
+  Clapperboard,
+  Film,
+  Languages,
+  Lock,
+  LogOut,
+  Play,
+  Radio,
+  Search,
+} from "lucide-react";
+import { useState } from "react";
+import { getPin, lock } from "@/lib/lock";
 import { useLang } from "@/lib/i18n";
 import { getCreds, logout } from "@/lib/xtream";
 
@@ -12,6 +23,7 @@ export default function Navbar() {
   const router = useRouter();
   const creds = getCreds();
   const { lang, setLang, t } = useLang();
+  const [searchQ, setSearchQ] = useState("");
 
   const links = [
     { href: "/live", label: t("nav.live"), Icon: Radio },
@@ -36,6 +48,22 @@ export default function Navbar() {
             </span>
           </span>
         </Link>
+
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (searchQ.trim()) router.push(`/search?q=${encodeURIComponent(searchQ.trim())}`);
+          }}
+          className="relative hidden md:block"
+        >
+          <Search className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
+          <input
+            value={searchQ}
+            onChange={(e) => setSearchQ(e.target.value)}
+            placeholder={t("search.placeholder")}
+            className="w-56 rounded-xl border border-gray-800 bg-gray-900/60 py-2 pe-3 ps-9 text-sm transition placeholder:text-gray-600 outline-none focus:w-72 focus:border-emerald-500"
+          />
+        </form>
 
         <div className="flex items-center gap-1.5">
           {links.map(({ href, label, Icon }) => {
@@ -78,6 +106,21 @@ export default function Navbar() {
           >
             <Languages className="h-4 w-4" />
             {lang === "ar" ? "EN" : "عربي"}
+          </button>
+          <button
+            onClick={() => {
+              if (getPin()) {
+                lock();
+                router.replace("/");
+              } else {
+                // أول مرة: نحدد الكود الأول من النافذة
+                window.dispatchEvent(new Event("app:lock-setup"));
+              }
+            }}
+            className="rounded-xl px-3 py-2 text-sm text-gray-300 transition hover:bg-gray-800"
+            title={t("lock.action")}
+          >
+            <Lock className="h-4 w-4" />
           </button>
           <button
             onClick={() => {

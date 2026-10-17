@@ -1,5 +1,6 @@
 "use client";
 
+import { Heart } from "lucide-react";
 import { Category } from "./types";
 import { useLang } from "@/lib/i18n";
 
@@ -17,6 +18,12 @@ export function CategoryChips({
     <div className="flex flex-wrap gap-2">
       <Chip active={value === "all"} onClick={() => onChange("all")}>
         {t("common.all")}
+      </Chip>
+      <Chip active={value === "favs"} onClick={() => onChange("favs")}>
+        <span className="flex items-center gap-1.5">
+          <Heart className="h-3.5 w-3.5 text-red-400" />
+          {t("common.favorites")}
+        </span>
       </Chip>
       {categories.map((c) => (
         <Chip
