@@ -12,9 +12,13 @@ const SAVE_EVERY_MS = 5000;
 export default function Player({
   src,
   title,
+  poster,
+  page,
 }: {
   src: string | null;
   title?: string;
+  poster?: string;
+  page?: string;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const { t } = useLang();
@@ -48,7 +52,7 @@ export default function Player({
       const saved = getProgress(src!);
       if (
         saved &&
-        video.duration > 0 &&
+        Number.isFinite(video.duration) &&
         saved.position > RESUME_THRESHOLD &&
         saved.position < video.duration * 0.95
       ) {
@@ -61,9 +65,13 @@ export default function Player({
     let lastSave = 0;
     const onTimeUpdate = () => {
       const now = Date.now();
-      if (now - lastSave > SAVE_EVERY_MS && video.duration > 0) {
+      if (now - lastSave > SAVE_EVERY_MS && Number.isFinite(video.duration)) {
         lastSave = now;
-        saveProgress(src!, video.currentTime, video.duration);
+        saveProgress(src!, video.currentTime, video.duration, {
+          title,
+          poster,
+          page,
+        });
       }
     };
     const onEnded = () => {
@@ -79,8 +87,12 @@ export default function Player({
 
     return () => {
       // بنقفل: نحفظ آخر مكان وقف عنده
-      if (video.duration > 0 && !video.ended) {
-        saveProgress(src!, video.currentTime, video.duration);
+      if (Number.isFinite(video.duration) && !video.ended) {
+        saveProgress(src!, video.currentTime, video.duration, {
+          title,
+          poster,
+          page,
+        });
       }
       video.removeEventListener("loadedmetadata", onLoaded);
       video.removeEventListener("timeupdate", onTimeUpdate);

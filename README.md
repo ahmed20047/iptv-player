@@ -8,6 +8,9 @@ A clean, simple IPTV player for the browser. Point it at your own subscription a
 - Live TV, movies and series, auto-sorted into categories
 - Series with seasons and episodes
 - Arabic and English interface (RTL/LTR), switchable from the navbar
+- Resume watching — pick up right where you stopped, for every movie and episode
+- "Continue watching" row with progress bars
+- Favorites (heart any movie or series, filter from the category panel)
 - Streams go through a tiny local proxy, so no CORS headaches
 - Login details are saved on your device — you sign in once
 
@@ -32,5 +35,4 @@ Then open http://localhost:3000, pick your login type, enter your provider detai
 ## To do
 
 - EPG (program guide) for live channels
-- Favorites and watch history
 - Desktop packaging

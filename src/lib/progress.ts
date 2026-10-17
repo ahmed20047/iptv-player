@@ -1,7 +1,13 @@
 "use client";
 
 // حفظ مكان توقف المشاهدة لكل فيديو (بيتخزن في المتصفح)
-export interface Progress {
+export interface ProgressMeta {
+  title?: string;
+  poster?: string;
+  page?: string; // movies / series
+}
+
+export interface Progress extends ProgressMeta {
   position: number; // ثواني
   duration: number;
   updated: number; // timestamp
@@ -24,10 +30,16 @@ export function getProgress(url: string): Progress | null {
   return readAll()[url] ?? null;
 }
 
-export function saveProgress(url: string, position: number, duration: number) {
-  if (!duration || position < 5) return;
+export function saveProgress(
+  url: string,
+  position: number,
+  duration: number,
+  meta: ProgressMeta = {}
+) {
+  // البث المباشر مالوش مدة ثابتة — منحفظوش
+  if (!Number.isFinite(duration) || position < 5) return;
   const all = readAll();
-  all[url] = { position, duration, updated: Date.now() };
+  all[url] = { position, duration, updated: Date.now(), ...meta };
   try {
     localStorage.setItem(KEY, JSON.stringify(all));
   } catch {
@@ -44,6 +56,16 @@ export function removeProgress(url: string) {
   const all = readAll();
   delete all[url];
   localStorage.setItem(KEY, JSON.stringify(all));
+}
+
+// آخر اللي اتفرج عليه، مرتب بالأحدث، مع إمكانية الفلترة بالصفحة
+export function getRecentProgress(page?: string, limit = 10): (Progress & { url: string })[] {
+  return Object.entries(readAll())
+    .map(([url, p]) => ({ ...p, url }))
+    .filter((p) => p.duration > 0 && p.position > 15 && p.position < p.duration * 0.97)
+    .filter((p) => !page || !p.page || p.page === page)
+    .sort((a, b) => b.updated - a.updated)
+    .slice(0, limit);
 }
 
 // 10:32 أو 1:02:15

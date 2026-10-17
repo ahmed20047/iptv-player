@@ -3,12 +3,14 @@
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Clapperboard, Play, Search } from "lucide-react";
+import { ArrowRight, Clapperboard, Heart, Play, Search } from "lucide-react";
 import CategoryPanel from "@/components/CategoryPanel";
+import ContinueWatching from "@/components/ContinueWatching";
 import Navbar from "@/components/Navbar";
 import Player from "@/components/Player";
 import { Category } from "@/components/types";
 import { Episode, fetchSeries, SeriesEntry } from "@/lib/content";
+import { isFavorite, toggleFavorite } from "@/lib/favorites";
 import { errText, useLang } from "@/lib/i18n";
 import { requireCreds } from "@/lib/xtream";
 
@@ -22,8 +24,9 @@ export default function SeriesPage() {
   const [openSeries, setOpenSeries] = useState<SeriesEntry | null>(null);
   const [episodes, setEpisodes] = useState<Record<string, Episode[]>>({});
   const [season, setSeason] = useState<string>("");
-  const [playing, setPlaying] = useState<{ url: string; title: string } | null>(null);
+  const [playing, setPlaying] = useState<{ url: string; title: string; poster?: string } | null>(null);
   const [error, setError] = useState("");
+  const [favTick, setFavTick] = useState(0); // عشان القلوب تتحدث أول بأول
 
   useEffect(() => {
     const creds = requireCreds();
@@ -44,10 +47,12 @@ export default function SeriesPage() {
     () =>
       seriesList.filter(
         (s) =>
-          (category === "all" || s.category === category) &&
+          (category === "all" ||
+            (category === "favs" ? isFavorite(s.poster ?? s.key) : s.category === category)) &&
           (!search || s.name.toLowerCase().includes(search.toLowerCase()))
       ),
-    [seriesList, category, search]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [seriesList, category, search, favTick]
   );
 
   async function open(s: SeriesEntry) {
@@ -70,6 +75,7 @@ export default function SeriesPage() {
     if (!openSeries) return;
     setPlaying({
       url: ep.url,
+      poster: openSeries.poster,
       title: `${openSeries.name} — ${t("series.episode", { n: ep.num })}${
         ep.title && ep.title !== ep.num ? `: ${ep.title}` : ""
       }`,
@@ -90,7 +96,12 @@ export default function SeriesPage() {
           </p>
         )}
 
-        <Player src={playing?.url ?? null} title={playing?.title} />
+        <Player src={playing?.url ?? null} title={playing?.title} poster={playing?.poster} page="series" />
+
+        <ContinueWatching
+          page="series"
+          onSelect={({ url, title, poster }) => setPlaying({ url, title, poster })}
+        />
 
         <div className="flex items-start gap-4">
           {/* التصنيفات على اليمين في العربي */}
@@ -184,6 +195,25 @@ export default function SeriesPage() {
                           <span className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/90 text-white shadow-xl">
                             <Play className="h-5 w-5 fill-current" />
                           </span>
+                        </span>
+                        <span
+                          role="button"
+                          tabIndex={0}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleFavorite(s.poster ?? s.key);
+                            setFavTick((x) => x + 1);
+                          }}
+                          className="absolute start-2 top-2 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-black/60 backdrop-blur transition hover:bg-black/80"
+                          title={t("common.favorites")}
+                        >
+                          <Heart
+                            className={`h-4 w-4 transition ${
+                              isFavorite(s.poster ?? s.key)
+                                ? "fill-red-500 text-red-500"
+                                : "text-white"
+                            }`}
+                          />
                         </span>
                       </div>
                       <p className="truncate px-3 py-2.5 text-xs font-semibold text-gray-200">{s.name}</p>

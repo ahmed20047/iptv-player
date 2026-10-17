@@ -3,12 +3,14 @@
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Film, Play, Search } from "lucide-react";
+import { Film, Heart, Play, Search } from "lucide-react";
 import CategoryPanel from "@/components/CategoryPanel";
+import ContinueWatching from "@/components/ContinueWatching";
 import Navbar from "@/components/Navbar";
 import Player from "@/components/Player";
 import { Category } from "@/components/types";
 import { fetchMovies, PlayItem } from "@/lib/content";
+import { isFavorite, toggleFavorite } from "@/lib/favorites";
 import { errText, useLang } from "@/lib/i18n";
 import { requireCreds } from "@/lib/xtream";
 
@@ -21,6 +23,7 @@ export default function MoviesPage() {
   const [search, setSearch] = useState("");
   const [playing, setPlaying] = useState<PlayItem | null>(null);
   const [error, setError] = useState("");
+  const [favTick, setFavTick] = useState(0); // عشان القلوب تتحدث أول بأول
 
   useEffect(() => {
     const creds = requireCreds();
@@ -41,10 +44,12 @@ export default function MoviesPage() {
     () =>
       movies.filter(
         (m) =>
-          (category === "all" || m.category === category) &&
+          (category === "all" ||
+            (category === "favs" ? isFavorite(m.url) : m.category === category)) &&
           (!search || m.name.toLowerCase().includes(search.toLowerCase()))
       ),
-    [movies, category, search]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [movies, category, search, favTick]
   );
 
   return (
@@ -57,7 +62,14 @@ export default function MoviesPage() {
           </p>
         )}
 
-        <Player src={playing?.url ?? null} title={playing?.name} />
+        <Player src={playing?.url ?? null} title={playing?.name} poster={playing?.poster} page="movies" />
+
+        <ContinueWatching
+          page="movies"
+          onSelect={({ url, title, poster }) =>
+            setPlaying({ id: `resume-${url}`, name: title, category: "", poster, url })
+          }
+        />
 
         <div className="relative">
           <Search className="pointer-events-none absolute start-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
@@ -99,6 +111,23 @@ export default function MoviesPage() {
                     <span className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/90 text-white shadow-xl">
                       <Play className="h-5 w-5 fill-current" />
                     </span>
+                  </span>
+                  <span
+                    role="button"
+                    tabIndex={0}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleFavorite(m.url);
+                      setFavTick((x) => x + 1);
+                    }}
+                    className="absolute start-2 top-2 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-black/60 backdrop-blur transition hover:bg-black/80"
+                    title={t("common.favorites")}
+                  >
+                    <Heart
+                      className={`h-4 w-4 transition ${
+                        isFavorite(m.url) ? "fill-red-500 text-red-500" : "text-white"
+                      }`}
+                    />
                   </span>
                 </div>
                 <p className="truncate px-3 py-2.5 text-xs font-semibold text-gray-200">{m.name}</p>

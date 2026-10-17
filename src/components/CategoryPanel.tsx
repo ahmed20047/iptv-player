@@ -1,9 +1,11 @@
 "use client";
 
+import { Heart } from "lucide-react";
 import { Category } from "./types";
 import { useLang } from "@/lib/i18n";
 
 // قائمة التصنيفات الجنبية — بتظهر على اليمين في العربي (أول عنصر في الـ RTL)
+// فيها كمان خيار المفضلة (value = "favs")
 export default function CategoryPanel({
   categories,
   value,
@@ -21,6 +23,16 @@ export default function CategoryPanel({
       </p>
       <Item active={value === "all"} onClick={() => onChange("all")}>
         {t("common.all")}
+      </Item>
+      <Item
+        active={value === "favs"}
+        onClick={() => onChange("favs")}
+        title={t("common.favorites")}
+      >
+        <span className="flex items-center gap-2">
+          <Heart className="h-3.5 w-3.5 text-red-400" />
+          {t("common.favorites")}
+        </span>
       </Item>
       {categories.map((c) => (
         <Item
