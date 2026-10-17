@@ -1,36 +1,36 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# IPTV Player
 
-## Getting Started
+A clean, simple IPTV player for the browser. Point it at your own subscription and watch live TV, movies and series — no clutter, no ads, nothing leaves your machine except requests to your own provider.
 
-First, run the development server:
+## Features
+
+- **Two login types** — Xtream Codes (server / port / username / password) or a plain M3U link
+- Live TV, movies and series, auto-sorted into categories
+- Series with seasons and episodes
+- Arabic and English interface (RTL/LTR), switchable from the navbar
+- Streams go through a tiny local proxy, so no CORS headaches
+- Login details are saved on your device — you sign in once
+
+## Run it
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Then open http://localhost:3000, pick your login type, enter your provider details and you're in.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Tech
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- Next.js (App Router)
+- Tailwind CSS
+- hls.js for HLS playback
+- Two API routes act as local proxies: one for the Xtream API, one for video streams and M3U parsing
 
-## Learn More
+> The app is just a player — it comes with no content. Use it with content you're allowed to watch.
 
-To learn more about Next.js, take a look at the following resources:
+## To do
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- EPG (program guide) for live channels
+- Favorites and watch history
+- Desktop packaging
